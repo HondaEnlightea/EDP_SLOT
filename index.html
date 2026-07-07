@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDP SLOT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムCSS設定 */
+        :root {
+            /* 上マージンは外部ページから上書き可能にする */
+            --slot-top-offset: 6vh;
+            --slot-color: #ff0000;
+            --panel-color: #ffffff;
+            --panel-border: #000000;
+            --button-default: #000000;
+            --button-disabled: #808080;
+        }
+
+        /* ラッパー: ページ内でスロットの上マージンを確保します。
+           他ページに組み込む際は :root { --slot-top-offset: ... } で調整してください。 */
+        #app-wrapper {
+            padding-top: var(--slot-top-offset);
+            min-height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            align-items: flex-start; /* 内部を上寄せ */
+            justify-content: center;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: #2d3748; /* 背景色 */
+            margin: 0;
+            overflow: hidden;
+            touch-action: none; /* スマホでのスクロール防止 */
+        }
+
+        /* スロットマシン本体 */
+        #slot-machine {
+            background-color: var(--slot-color);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 5px 15px rgba(255,255,255,0.3);
+            border: 4px solid #cc0000;
+        }
+
+        /* パネル枠 */
+        .panel-container {
+            background-color: var(--panel-color);
+            border: 4px solid var(--panel-border);
+            border-radius: 8px;
+            position: relative;
+            /* 3要素分(上下半分+中央)を見せるための高さ */
+            height: 240px; 
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .panel-container::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.95) 0%,
+                rgba(0, 0, 0, 0) 15%,
+                rgba(0, 0, 0, 0) 85%,
+                rgba(0, 0, 0, 0.95) 100%
+            );
+        }
+
+        /* スクロールするリスト */
+        .slot-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            will-change: transform;
+        }
+
+        .slot-item {
+            height: 80px; /* 1アイテムの高さ (240px / 3) */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            box-sizing: border-box;
+            position: relative;
+            width: 100%;
+        }
+
+        .word-container {
+            display: grid;
+            grid-template-columns: 30% 70%;
+            align-items: baseline;
+            width: 100%;
+        }
+
+        .word-initial {
+            font-size: 2.2rem;
+            color: #000;
+            text-align: right;
+            padding-right: 2px;
+        }
+
+        .word-rest {
+            font-size: 1.2rem;
+            text-align: left;
+            padding-left: 2px;
+        }
+
+        .ruby-text {
+            font-size: 0.75rem;
+            color: #555;
+            position: absolute;
+            bottom: 4px;
+            opacity: 0; /* 初期状態は非表示 */
+            transition: opacity 0.3s;
+        }
+        
+        .ruby-visible .ruby-text {
+            opacity: 1;
+        }
+
+        /* 停止ボタン */
+        .stop-btn {
+            background-color: var(--button-default);
+            border: 2px solid #555;
+            box-shadow: 0 4px 0 #222;
+            transition: all 0.1s;
+        }
+        .stop-btn:active, .stop-btn.pressed {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #222;
+        }
+        .stop-btn:disabled, .stop-btn.disabled-visual {
+            background-color: var(--button-disabled);
+            cursor: not-allowed;
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #222;
+        }
+
+        /* レバー */
+        #lever-wrapper {
+            position: relative;
+            width: 60px;
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 150; /* オーバーレイより上 */
+            cursor: pointer;
+        }
+
+        #lever-slot {
+            width: 20px;
+            height: 250px;
+            background-color: #1a202c;
+            border-radius: 10px;
+            position: absolute;
+            bottom: 0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        #lever-rod {
+            width: 14px;
+            height: 200px; /* 80%の長さ */
+            background: linear-gradient(to right, #999, #eee, #999);
+            position: absolute;
+            bottom: 20px;
+            transform-origin: bottom center;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 7px;
+        }
+
+        .lever-pulled #lever-rod {
+            transform: rotateX(180deg) scaleY(0.5); /* 倒れる表現 */
+        }
+
+        #lever-head {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #555, #000);
+            border-radius: 50%;
+            position: absolute;
+            top: -25px;
+            left: -18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+        }
+
+        /* オーバーレイ */
+        #production-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: opacity 0.5s;
+        }
+        
+        .overlay-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 演出テキストエフェクト */
+        .effect-gold {
+            background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0px 0px 10px rgba(252, 246, 186, 0.8);
+            animation: shine 2s infinite linear;
+            background-size: 200% auto;
+        }
+        
+        .effect-gold .word-initial,
+        .effect-gold .word-rest {
+            color: transparent;
+        }
+
+        .effect-rainbow {
+            background: linear-gradient(to right, red, orange, yellow, green, cyan, blue, violet);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+            animation: shine 2s infinite linear;
+            background-size: 200% auto;
+        }
+        
+        .effect-rainbow .word-initial,
+        .effect-rainbow .word-rest {
+            color: transparent;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        /* 紙吹雪キャンバス */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 本番用オーバーレイ -->
+    <div id="production-overlay">
+        <h1 class="text-white text-5xl md:text-7xl font-bold mb-8 tracking-widest">What Is EDP?</h1>
+        <p class="text-gray-400 animate-pulse">Click the SET lever to start</p>
+    </div>
+
+    <!-- 紙吹雪用キャンバス -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <div id="app-wrapper">
+        <div class="flex items-end justify-center gap-8 h-full pb-20 md:pb-0 md:items-center">
+        
+        <!-- スロットマシン本体 -->
+        <div id="slot-machine" class="p-6 md:p-10 flex flex-col items-center relative z-10">
+            <!-- パネルコンテナ (E, D, P) -->
+            <div class="flex gap-2 md:gap-4 mb-6">
+                <!-- E列 -->
+                <div class="flex flex-col items-center gap-4">
+                    <div class="panel-container w-32 md:w-48 bg-white">
+                        <ul id="slot-list-e" class="slot-list"></ul>
+                    </div>
+                    <button id="btn-stop-e" class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none">E</button>
+                </div>
+                <!-- D列 -->
+                <div class="flex flex-col items-center gap-4">
+                    <div class="panel-container w-32 md:w-48 bg-white">
+                        <ul id="slot-list-d" class="slot-list"></ul>
+                    </div>
+                    <button id="btn-stop-d" class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none">D</button>
+                </div>
+                <!-- P列 -->
+                <div class="flex flex-col items-center gap-4">
+                    <div class="panel-container w-32 md:w-48 bg-white">
+                        <ul id="slot-list-p" class="slot-list"></ul>
+                    </div>
+                    <button id="btn-stop-p" class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none">P</button>
+                </div>
+            </div>
+            
+            <div class="text-white text-sm opacity-80 mt-2">
+                 Stop: E, D, P / Lever: S 
+            </div>
+        </div>
+
+        <!-- レバー -->
+        <div id="lever-wrapper" onclick="triggerEvent('start')">
+            <div id="lever-slot"></div>
+            <div id="lever-rod">
+                <div id="lever-head">SET</div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // -----------------------------------------------------------------
+        // 1. データと要件定義の読み込み (JSONをオブジェクトとして定義)
+        // -----------------------------------------------------------------
+        const CONFIG = {
+            "slot": {
+                "rotationDirection": "down",
+                "rotationTimePerCycle": 1200, // 1周1200ms
+                "stopDuration": 2000,        // 停止時2000msかけて減速
+                "alignCenterOnStop": true
+            },
+            "buttons": {
+                "defaultColor": "#000000",
+                "disabledColor": "#808080"
+            },
+            "lever": { "label": "SET", "lengthRatio": 0.8 },
+            "theme": { "slotColor": "#ff0000", "panelColor": "#ffffff", "panelBorderColor": "#000000", "fontFamily": "sans-serif", "highlightInitial": true },
+            "display": { "showNeighborItems": true, "showRuby": true, "separateRubyObject": true },
+            "input": {
+                "keyboardEnabled": true,
+                "mapping": { "start": "KeyS", "stopE": "KeyE", "stopD": "KeyD", "stopP": "KeyP" }
+            },
+            "sound": {
+                "engine": "speechSynthesis",
+                "voice": { "lang": "ja-JP", "rate": 1.5, "pitch": 1.0, "volume": 1.0 },
+                "beep": { "volume": 0.9 },
+                "events": {
+                    "lever": "ガチャン",
+                    "stop": "ピッ",
+                    "patternA": "Electronic Data Processing",
+                    "patternB": "Echigo Dangerous People"
+                }
+            },
+            "jackpot": {
+                "judgeTiming": "afterLastStop",
+                "patterns": [
+                    ["Electronic", "Data", "Processing"],
+                    ["Echigo", "Dangerous", "People"]
+                ],
+                "effects": {
+                    "patternA": { "textEffect": "gold", "useConfetti": true },
+                    "patternB": { "textEffect": "rainbow", "useConfetti": true }
+                }
+            },
+            "production": {
+                "blackOverlay": true,
+                "overlayText": "What Is EDP?",
+                "requireLeverClick": true
+            }
+        };
+
+        const WORD_DATA = {
+            "E": [
+                { "word": "Echigo", "ruby": "越後" },
+                { "word": "Electronic", "ruby": "電子" },
+                { "word": "Eikaiwa", "ruby": "英会話" },
+                { "word": "Egoist", "ruby": "エゴイスト" },
+                { "word": "Engineer", "ruby": "エンジニア" }
+            ],
+            "D": [
+                { "word": "Dangerous", "ruby": "デンジャラス" },
+                { "word": "Data", "ruby": "データ" },
+                { "word": "Dopamine", "ruby": "ドーパミン" },
+                { "word": "Dokagui", "ruby": "ドカ食い" },
+                { "word": "Dance", "ruby": "ダンス" },
+                { "word": "Deadline", "ruby": "締め切り" },
+                { "word": "Donguri", "ruby": "どんぐり" }
+            ],
+            "P": [
+                { "word": "People", "ruby": "ピーポー" },
+                { "word": "Processing", "ruby": "処理部" },
+                { "word": "Plan", "ruby": "計画" },
+                { "word": "Paradise", "ruby": "パラダイス" },
+                { "word": "Problem", "ruby": "問題" },
+                { "word": "Panic", "ruby": "パニック" },
+            ]
+        };
+
+        // -----------------------------------------------------------------
+        // 2. システム定数・状態管理
+        // -----------------------------------------------------------------
+        const ITEM_HEIGHT = 80; // 1アイテムの高さ(px)
+        const LOOP_COUNT = 20;  // 描画用に配列をループさせる回数（シームレス化により削減）
+
+        const state = {
+            isOverlayActive: CONFIG.production.blackOverlay,
+            isPlaying: false,
+            forceResult: null, // テスト用強制フラグ
+            fullReadTimeout: null,
+            columns: {
+                'e': { id: 'e', words: WORD_DATA.E, isSpinning: false, isStopped: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null },
+                'd': { id: 'd', words: WORD_DATA.D, isSpinning: false, isStopped: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null },
+                'p': { id: 'p', words: WORD_DATA.P, isSpinning: false, isStopped: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null }
+            },
+            animationFrameId: null,
+            lastTime: 0
+        };
+
+        // -----------------------------------------------------------------
+        // 3. UIの初期化と描画
+        // -----------------------------------------------------------------
+        function initDOM() {
+            ['e', 'd', 'p'].forEach(col => {
+                const listEl = document.getElementById(`slot-list-${col}`);
+                state.columns[col].element = listEl;
+                
+                // 無限スクロール用に配列を複数回展開してDOMを生成
+                let html = '';
+                // 最初は少し余裕をもたせるために先頭にダミーを追加（パチスロ風の見た目のため）
+                const totalItems = state.columns[col].words.length * LOOP_COUNT;
+                
+                for (let i = 0; i < totalItems; i++) {
+                    const wordObj = state.columns[col].words[i % state.columns[col].words.length];
+                    const initial = wordObj.word.charAt(0);
+                    const rest = wordObj.word.slice(1);
+                    
+                    html += `
+                        <li class="slot-item" id="item-${col}-${i}">
+                            <div class="word-container">
+                                <span class="word-initial">${initial}</span>
+                                <span class="word-rest">${rest}</span>
+                            </div>
+                            <span class="ruby-text">${wordObj.ruby}</span>
+                        </li>
+                    `;
+                }
+                listEl.innerHTML = html;
+                
+                // 初期位置：最初の要素が中央(ITEM_HEIGHT * 1)にくるように調整。
+                // コンテナの高さは ITEM_HEIGHT * 3 で、中央は 1 のインデックス位置。
+                // translateY = -(item_index * ITEM_HEIGHT) + ITEM_HEIGHT(オフセット)
+                updateColumnPosition(col, 0);
+            });
+
+            // ボタンのイベントリスナー（UIと内部イベントの分離）
+            document.getElementById('btn-stop-e').addEventListener('click', () => triggerEvent('stopE'));
+            document.getElementById('btn-stop-d').addEventListener('click', () => triggerEvent('stopD'));
+            document.getElementById('btn-stop-p').addEventListener('click', () => triggerEvent('stopP'));
+        }
+
+        function updateColumnPosition(colId, indexOrPos, isPos = false) {
+            const col = state.columns[colId];
+            if(isPos) {
+                col.currentPos = indexOrPos;
+            } else {
+                col.currentPos = indexOrPos * ITEM_HEIGHT;
+            }
+            // CSSの仕様上、下方向に回転 = リスト全体が上へ移動する (translateYがマイナス)
+            // 視覚的に中央（インデックス1の位置）に合わせるため ITEM_HEIGHT 分オフセットする
+            col.element.style.transform = `translateY(${-(col.currentPos) + ITEM_HEIGHT}px)`;
+        }
+
+        // -----------------------------------------------------------------
+        // 4. イベント管理 (ロジックとUIの分離)
+        // -----------------------------------------------------------------
+        function triggerEvent(eventName) {
+            switch(eventName) {
+                case 'start':
+                    if (state.isOverlayActive) {
+                        removeOverlay();
+                    }
+                    if (!state.isPlaying) {
+                        startSlot();
+                    }
+                    break;
+                case 'stopE': stopSlot('e'); break;
+                case 'stopD': stopSlot('d'); break;
+                case 'stopP': stopSlot('p'); break;
+                case 'forcePatternA':
+                    state.forceResult = 'patternA';
+                    console.log('Force Jackpot: Pattern A');
+                    break;
+                case 'forcePatternB':
+                    state.forceResult = 'patternB';
+                    console.log('Force Jackpot: Pattern B');
+                    break;
+            }
+        }
+
+        function removeOverlay() {
+            state.isOverlayActive = false;
+            const overlay = document.getElementById('production-overlay');
+            overlay.classList.add('overlay-hidden');
+            // 初回インタラクションで音声の許可を取るため、無音再生
+            unlockSpeech();
+        }
+
+        // キーボード対応
+        window.addEventListener('keydown', (e) => {
+            const code = e.code;
+            if (code === CONFIG.input.mapping.start) triggerEvent('start');
+            else if (code === CONFIG.input.mapping.stopE) triggerEvent('stopE');
+            else if (code === CONFIG.input.mapping.stopD) triggerEvent('stopD');
+            else if (code === CONFIG.input.mapping.stopP) triggerEvent('stopP');
+            // テスト用隠しコマンド
+            else if (code === 'KeyA') triggerEvent('forcePatternA');
+            else if (code === 'KeyB') triggerEvent('forcePatternB');
+        });
+
+        // -----------------------------------------------------------------
+        // 5. スロット制御ロジック
+        // -----------------------------------------------------------------
+        function startSlot() {
+            state.isPlaying = true;
+            state.forceResult = null; // テスト用強制フラグをリセット
+            // 新しいプレイ開始時は保留中の全体読み上げをクリア
+            if (state.fullReadTimeout) {
+                clearTimeout(state.fullReadTimeout);
+                state.fullReadTimeout = null;
+            }
+            // 優先して既存の合成音声をキャンセル
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            
+            // レバー演出
+            const lever = document.getElementById('lever-wrapper');
+            lever.classList.add('lever-pulled');
+            setTimeout(() => lever.classList.remove('lever-pulled'), 300);
+            
+            // 音声: レバーは従来どおりTTSで "ガチャン" と読み上げる
+            speak(CONFIG.sound.events.lever);
+            
+            // 初期化
+            resetVisualEffects();
+            stopConfetti();
+            
+            ['e', 'd', 'p'].forEach(col => {
+                const c = state.columns[col];
+                c.isSpinning = true;
+                c.isStopped = false;
+                
+                // ボタン初期化
+                const btn = document.getElementById(`btn-stop-${col}`);
+                btn.classList.remove('disabled-visual', 'pressed');
+                btn.disabled = false;
+
+                // 速度計算：1周500ms
+                // 1秒あたりの移動ピクセル数 = (アイテム数 * 高) / (500ms / 1000)
+                const totalHeightPerCycle = c.words.length * ITEM_HEIGHT;
+                c.velocity = totalHeightPerCycle / (CONFIG.slot.rotationTimePerCycle / 1000); 
+            });
+
+            state.lastTime = performance.now();
+            if (!state.animationFrameId) {
+                state.animationFrameId = requestAnimationFrame(animationLoop);
+            }
+        }
+
+        function stopSlot(colId) {
+            const col = state.columns[colId];
+            if (!state.isPlaying || !col.isSpinning || col.isStopped) return;
+
+            col.isStopped = true;
+            
+            // ボタンの視覚変更
+            const btn = document.getElementById(`btn-stop-${colId}`);
+            btn.classList.add('disabled-visual', 'pressed');
+            btn.disabled = true;
+
+            // 停止音はWebAudioで即時再生
+            playBeep('stop');
+
+            // 停止目標位置の計算
+            // 目的: ボタン押下時に正面（中央）に表示されているアイテムが
+            // 1回転（配列長分）してから同じ位置に停止するようにする。
+            const oneCycle = col.words.length;
+            const currentAbsolute = Math.round(col.currentPos / ITEM_HEIGHT);
+            // 半回転後に停止する（1/2 周）
+            const halfCycle = Math.round(oneCycle / 2);
+            let targetItemIndex = currentAbsolute + halfCycle;
+
+            // テスト用: 強制結果指定がある場合は、そのワードが未来の位置に来るよう調整
+            if (state.forceResult) {
+                const patternIdx = state.forceResult === 'patternA' ? 0 : 1;
+                const colIdxMap = { 'e': 0, 'd': 1, 'p': 2 };
+                const targetWordStr = CONFIG.jackpot.patterns[patternIdx][colIdxMap[colId]];
+                const wordIndex = col.words.findIndex(w => w.word === targetWordStr);
+                if (wordIndex !== -1) {
+                    const currentMod = targetItemIndex % col.words.length;
+                    let diff = wordIndex - currentMod;
+                    if (diff < 0) diff += col.words.length;
+                    targetItemIndex += diff;
+                }
+            }
+
+            col.targetPos = targetItemIndex * ITEM_HEIGHT;
+            col.stopStartTime = performance.now();
+            col.startPos = col.currentPos;
+            // 停止開始時の速度を保存して、滑らかな等加速度減速を計算する
+            col.stopInitialVelocity = col.velocity || 0;
+        }
+
+        function animationLoop(timestamp) {
+            const deltaTime = (timestamp - state.lastTime) / 1000; // 秒
+            state.lastTime = timestamp;
+
+            let allStopped = true;
+
+            ['e', 'd', 'p'].forEach(colId => {
+                const col = state.columns[colId];
+                if (!col.isSpinning) return;
+                
+                allStopped = false;
+
+                if (!col.isStopped) {
+                    // 通常回転
+                    col.currentPos += col.velocity * deltaTime;
+                    
+                    // 無限スクロールのシームレスループ処理
+                    // 2周分を超えたら1周分巻き戻すことで、DOM要素の枯渇（空白化）を防ぐ
+                    const oneCycleHeight = col.words.length * ITEM_HEIGHT;
+                    if (col.currentPos >= oneCycleHeight * 2) {
+                        col.currentPos -= oneCycleHeight;
+                    }
+                } else {
+                    // 減速処理: 現在の回転速度を引き継ぎ、等加速度運動で目標位置へ滑らかに到達させる
+                    const elapsedMs = timestamp - col.stopStartTime;
+                    const T = CONFIG.slot.stopDuration; // ms
+                    const t = Math.min(Math.max(elapsedMs, 0), T) / 1000; // 秒
+
+                    const s = col.targetPos - col.startPos; // 目標までの距離(px)
+                    const v0 = col.stopInitialVelocity || 0; // px/s
+
+                    // 加速度 a を求める: s = v0*T + 0.5*a*T^2  (T in seconds)
+                    const Tsec = Math.max(T / 1000, 0.0001);
+                    const a = (2 * (s - v0 * Tsec)) / (Tsec * Tsec);
+
+                    // 位置と現在速度を計算
+                    col.currentPos = col.startPos + v0 * t + 0.5 * a * t * t;
+                    col.velocity = v0 + a * t; // 更新（念のため）
+
+                    if (elapsedMs >= T) {
+                        col.currentPos = col.targetPos;
+                        col.isSpinning = false;
+                        // 最終停止時の処理
+                        finalizeStop(colId);
+                    }
+                }
+
+                updateColumnPosition(colId, col.currentPos, true);
+            });
+
+            if (allStopped) {
+                state.animationFrameId = null;
+                state.isPlaying = false;
+                checkJackpot(); // 当たり判定
+
+                // 3つ全て停止した2秒後に、英単語ではなくルビを読ませる（読点で区切って自然な間を作る）
+                if (state.fullReadTimeout) {
+                    clearTimeout(state.fullReadTimeout);
+                    state.fullReadTimeout = null;
+                }
+                state.fullReadTimeout = setTimeout(() => {
+                    try {
+                        const rE = state.columns['e'].words[state.columns['e'].resultIndex].ruby || '';
+                        const rD = state.columns['d'].words[state.columns['d'].resultIndex].ruby || '';
+                        const rP = state.columns['p'].words[state.columns['p'].resultIndex].ruby || '';
+                        const text = [rE, rD, rP].filter(t => t).join('、');
+                        if (text) speak(text);
+                    } catch (e) {}
+                    state.fullReadTimeout = null;
+                }, 2000);
+            } else {
+                state.animationFrameId = requestAnimationFrame(animationLoop);
+            }
+        }
+
+        function finalizeStop(colId) {
+            const col = state.columns[colId];
+            // 停止インデックスを確定 (ループを考慮して元の配列インデックスに丸める)
+            const absoluteIndex = Math.round(col.targetPos / ITEM_HEIGHT);
+            col.resultIndex = absoluteIndex % col.words.length;
+
+            // オーバーシュート: 最終位置の少し手前で通り過ぎる表現を実装
+            const overshoot = ITEM_HEIGHT * 0.25; // 1/4アイテム分通り過ぎる
+            const settleStart = col.targetPos + overshoot; // 最初に表示する位置（少し過ぎた位置）
+            const settleEnd = col.targetPos; // 最終正位置
+
+            // 現在の位置から短い前進（overshoot）→ゆっくり戻る2段階アニメに変更
+            const currentPos = col.currentPos; // 通常は targetPos
+            const forwardDur = 100; // ms: 短く素早く前へ
+            const backDur = 300; // ms: ゆっくり戻す
+            const forwardStart = performance.now();
+            const forwardStartPos = currentPos;
+            const forwardDelta = settleStart - forwardStartPos; // 正の値
+
+            if (col.settleAnimId) {
+                cancelAnimationFrame(col.settleAnimId);
+                col.settleAnimId = null;
+            }
+
+            // イージング関数
+            const easeOutQuad = t => 1 - (1 - t) * (1 - t);
+            const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+            function forwardStep(now) {
+                const elapsed = now - forwardStart;
+                const t = Math.min(Math.max(elapsed / forwardDur, 0), 1);
+                col.currentPos = forwardStartPos + forwardDelta * easeOutQuad(t);
+                updateColumnPosition(colId, col.currentPos, true);
+                if (t < 1) {
+                    col.settleAnimId = requestAnimationFrame(forwardStep);
+                } else {
+                    // 次は戻るアニメーション
+                    const backStart = performance.now();
+                    const backStartPos = col.currentPos; // should be settleStart
+                    const backDelta = settleEnd - backStartPos; // negative value
+
+                    function backStep(now2) {
+                        const elapsed2 = now2 - backStart;
+                        const t2 = Math.min(Math.max(elapsed2 / backDur, 0), 1);
+                        col.currentPos = backStartPos + backDelta * easeOutCubic(t2);
+                        updateColumnPosition(colId, col.currentPos, true);
+                        if (t2 < 1) {
+                            col.settleAnimId = requestAnimationFrame(backStep);
+                        } else {
+                            col.settleAnimId = null;
+                            // 最終的に厳密な位置に合わせる
+                            updateColumnPosition(colId, settleEnd, true);
+                            // ルビを表示する
+                            const itemEl = document.getElementById(`item-${colId}-${absoluteIndex}`);
+                            if(itemEl) itemEl.classList.add('ruby-visible');
+                            // 停止した単語のルビを読み上げ
+                            const rubyText = col.words[col.resultIndex] && col.words[col.resultIndex].ruby ? col.words[col.resultIndex].ruby : '';
+                            if (rubyText) speak(rubyText);
+                        }
+                    }
+                    col.settleAnimId = requestAnimationFrame(backStep);
+                }
+            }
+
+            col.settleAnimId = requestAnimationFrame(forwardStep);
+        }
+
+        // -----------------------------------------------------------------
+        // 6. 音声合成と演出
+        // -----------------------------------------------------------------
+        function speak(text) {
+            // null/undefined は何もしない。空文字列は許可して "アンロック" に使える
+            if (text == null) return;
+
+            // 強制的に前の音声をキャンセルして新しい発話を優先
+            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+
+            const u = new SpeechSynthesisUtterance(text === '' ? ' ' : text);
+            u.lang = CONFIG.sound.voice.lang;
+            u.rate = CONFIG.sound.voice.rate;
+            u.pitch = CONFIG.sound.voice.pitch;
+            u.volume = CONFIG.sound.voice.volume;
+            window.speechSynthesis.speak(u);
+        }
+
+        // Web Audio API: 簡易的な電子音 (ピッ) を即時再生
+        let _audioCtx = null;
+        function initAudio() {
+            if (_audioCtx) return;
+            try {
+                _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                _audioCtx = null;
+            }
+        }
+
+        function playBeep(type = 'stop') {
+            initAudio();
+            if (!_audioCtx) return;
+            // resume していないと iOS 等で鳴らない
+            _audioCtx.resume().catch(()=>{});
+
+            const now = _audioCtx.currentTime;
+            const gain = _audioCtx.createGain();
+            const osc = _audioCtx.createOscillator();
+            // タイプ毎の音色と長さ
+            osc.connect(gain);
+            gain.connect(_audioCtx.destination);
+
+            if (type === 'stop') {
+                // 低くて長めで力強い "ピッ" (存在感を増す)
+                const peak = Math.min(CONFIG.sound.beep.volume * 1.4, 1.0);
+                const dur = 0.5; // 長さ
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + dur * 0.6);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(peak, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                osc.start(now);
+                osc.stop(now + dur + 0.02);
+            } else if (type === 'jackA_short' || type === 'jackB_short') {
+                // 短い「キューン」: 短時間の上昇
+                const duration = type === 'jackA_short' ? 0.22 : 0.26;
+                const osc1 = _audioCtx.createOscillator();
+                const g = _audioCtx.createGain();
+                osc1.type = type === 'jackA_short' ? 'sawtooth' : 'square';
+                const f0 = type === 'jackA_short' ? 700 : 800;
+                const f1 = type === 'jackA_short' ? 1500 : 1700;
+                osc1.frequency.setValueAtTime(f0, now);
+                osc1.frequency.exponentialRampToValueAtTime(f1, now + duration * 0.9);
+                g.gain.setValueAtTime(0.0001, now);
+                g.gain.linearRampToValueAtTime(CONFIG.sound.beep.volume, now + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc1.connect(g);
+                g.connect(_audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + duration + 0.02);
+                setTimeout(() => { try { osc1.disconnect(); g.disconnect(); } catch(e){} }, (duration + 0.2) * 1000);
+            } else if (type === 'jackA_long' || type === 'jackB_long') {
+                // 長い「キュイーン」: デチューンとビブラートを加えながらゆっくり上昇
+                const duration = type === 'jackA_long' ? 0.9 : 1.1;
+                const osc1 = _audioCtx.createOscillator();
+                const osc2 = _audioCtx.createOscillator();
+                const g = _audioCtx.createGain();
+                const lfo = _audioCtx.createOscillator();
+                const lfoGain = _audioCtx.createGain();
+                osc1.type = type === 'jackA_long' ? 'sawtooth' : 'square';
+                osc2.type = 'sawtooth';
+                const f0 = type === 'jackA_long' ? 600 : 650;
+                const f1 = type === 'jackA_long' ? 2600 : 3000;
+                osc1.frequency.setValueAtTime(f0, now);
+                osc2.frequency.setValueAtTime(f0 * 1.02, now);
+                osc1.frequency.exponentialRampToValueAtTime(f1, now + duration * 0.9);
+                osc2.frequency.exponentialRampToValueAtTime(f1 * 1.01, now + duration * 0.9);
+                // LFO vibrato
+                lfo.type = 'sine';
+                lfo.frequency.setValueAtTime(5.5, now);
+                lfoGain.gain.setValueAtTime(type === 'jackA_long' ? 6 : 10, now);
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc1.frequency);
+                lfoGain.connect(osc2.frequency);
+                g.gain.setValueAtTime(0.0001, now);
+                g.gain.linearRampToValueAtTime(CONFIG.sound.beep.volume, now + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc1.connect(g);
+                osc2.connect(g);
+                g.connect(_audioCtx.destination);
+                osc1.start(now);
+                osc2.start(now + 0.006);
+                lfo.start(now);
+                osc1.stop(now + duration + 0.05);
+                osc2.stop(now + duration + 0.05);
+                lfo.stop(now + duration + 0.05);
+                setTimeout(() => { try { osc1.disconnect(); osc2.disconnect(); g.disconnect(); lfo.disconnect(); lfoGain.disconnect(); } catch(e){} }, (duration + 0.2) * 1000);
+            } else {
+                // デフォルト（短いクリック）
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(CONFIG.sound.beep.volume * 0.6, now + 0.005);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+
+            // ノードは自動GCされるが念のため disconnect
+            setTimeout(() => { try { osc.disconnect(); gain.disconnect(); } catch(e){} }, 800);
+        }
+
+        function unlockSpeech() {
+            // 空の発話で音声許可をトリガー
+            try {
+                if (window.speechSynthesis) {
+                    const u = new SpeechSynthesisUtterance(' ');
+                    u.lang = CONFIG.sound.voice.lang;
+                    u.rate = CONFIG.sound.voice.rate;
+                    u.pitch = CONFIG.sound.voice.pitch;
+                    u.volume = 0; // 無音
+                    window.speechSynthesis.speak(u);
+                }
+            } catch (e) {}
+            // そしてAudioContextの初期化も。
+            initAudio();
+        }
+
+        function checkJackpot() {
+            // 結果の単語を取得
+            const resE = state.columns['e'].words[state.columns['e'].resultIndex].word;
+            const resD = state.columns['d'].words[state.columns['d'].resultIndex].word;
+            const resP = state.columns['p'].words[state.columns['p'].resultIndex].word;
+
+            const patterns = CONFIG.jackpot.patterns;
+            
+            if (resE === patterns[0][0] && resD === patterns[0][1] && resP === patterns[0][2]) {
+                playEffect(CONFIG.sound.events.patternA, CONFIG.jackpot.effects.patternA);
+            } else if (resE === patterns[1][0] && resD === patterns[1][1] && resP === patterns[1][2]) {
+                playEffect(CONFIG.sound.events.patternB, CONFIG.jackpot.effects.patternB);
+            }
+        }
+
+        function playEffect(voiceText, effectConfig) {
+            // 音声は個別の停止時・全体読み上げで処理するため、ここでは発話を行わない
+            
+            // 文字エフェクト
+            const absoluteE = Math.round(state.columns['e'].currentPos / ITEM_HEIGHT);
+            const absoluteD = Math.round(state.columns['d'].currentPos / ITEM_HEIGHT);
+            const absoluteP = Math.round(state.columns['p'].currentPos / ITEM_HEIGHT);
+
+            ['e', 'd', 'p'].forEach(col => {
+                const absIdx = Math.round(state.columns[col].currentPos / ITEM_HEIGHT);
+                const el = document.getElementById(`item-${col}-${absIdx}`);
+                if (el) {
+                    const textContainer = el.querySelector('.word-container');
+                    textContainer.classList.add(`effect-${effectConfig.textEffect}`);
+                }
+            });
+
+            // 紙吹雪
+            if (effectConfig.useConfetti) {
+                startConfetti();
+            }
+
+            // 当たり演出に合わせて高音の効果音を1秒遅延で再生（短い「キューン」＋長い「キュイーン」）
+            try {
+                if (voiceText === CONFIG.sound.events.patternA) {
+                    // 短音と長音を重ねる（短音を短く、長音を早めに開始）
+                    setTimeout(() => {
+                        playBeep('jackA_short');
+                        setTimeout(() => playBeep('jackA_long'), 120);
+                    }, 1000);
+                } else if (voiceText === CONFIG.sound.events.patternB) {
+                    setTimeout(() => {
+                        playBeep('jackB_short');
+                        setTimeout(() => playBeep('jackB_long'), 140);
+                    }, 1000);
+                }
+            } catch (e) {}
+        }
+
+        function resetVisualEffects() {
+            // ルビとエフェクトのクリア
+            document.querySelectorAll('.slot-item').forEach(el => {
+                el.classList.remove('ruby-visible');
+                const tc = el.querySelector('.word-container');
+                if(tc) {
+                    tc.classList.remove('effect-gold', 'effect-rainbow');
+                }
+            });
+        }
+
+        // -----------------------------------------------------------------
+        // 7. 紙吹雪エンジン (Canvas)
+        // -----------------------------------------------------------------
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let confettiParticles = [];
+        let confettiAnimId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function startConfetti() {
+            stopConfetti();
+            for (let i = 0; i < 150; i++) {
+                confettiParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 10 + 5,
+                    h: Math.random() * 10 + 5,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    vy: Math.random() * 3 + 2,
+                    vx: Math.random() * 2 - 1,
+                    rot: Math.random() * 360,
+                    rotSpeed: Math.random() * 10 - 5
+                });
+            }
+            renderConfetti();
+        }
+
+        function stopConfetti() {
+            confettiParticles = [];
+            if (confettiAnimId) {
+                cancelAnimationFrame(confettiAnimId);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function renderConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let active = false;
+            
+            confettiParticles.forEach(p => {
+                p.y += p.vy;
+                p.x += p.vx;
+                p.rot += p.rotSpeed;
+                
+                if (p.y < canvas.height) active = true;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot * Math.PI / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+            });
+
+            if (active) {
+                confettiAnimId = requestAnimationFrame(renderConfetti);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // 初期化実行
+        initDOM();
+
+    </script>
+</body>
+</html>
