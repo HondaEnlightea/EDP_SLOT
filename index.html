@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EDP SLOT</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* カスタムCSS設定 */
@@ -24,23 +26,26 @@
             min-height: 100vh;
             box-sizing: border-box;
             display: flex;
-            align-items: flex-start; /* 内部を上寄せ */
+            align-items: flex-start;
+            /* 内部を上寄せ */
             justify-content: center;
         }
 
         body {
             font-family: sans-serif;
-            background-color: #2d3748; /* 背景色 */
+            background-color: #2d3748;
+            /* 背景色 */
             margin: 0;
             overflow: hidden;
-            touch-action: none; /* スマホでのスクロール防止 */
+            touch-action: none;
+            /* スマホでのスクロール防止 */
         }
 
         /* スロットマシン本体 */
         #slot-machine {
             background-color: var(--slot-color);
             border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 5px 15px rgba(255,255,255,0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 5px 15px rgba(255, 255, 255, 0.3);
             border: 4px solid #cc0000;
         }
 
@@ -51,7 +56,7 @@
             border-radius: 8px;
             position: relative;
             /* 3要素分(上下半分+中央)を見せるための高さ */
-            height: 240px; 
+            height: 276px;
             overflow: hidden;
             isolation: isolate;
         }
@@ -62,13 +67,11 @@
             inset: 0;
             pointer-events: none;
             z-index: 1;
-            background: linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.95) 0%,
-                rgba(0, 0, 0, 0) 15%,
-                rgba(0, 0, 0, 0) 85%,
-                rgba(0, 0, 0, 0.95) 100%
-            );
+            background: linear-gradient(to bottom,
+                    rgba(0, 0, 0, 0.95) 0%,
+                    rgba(0, 0, 0, 0) 15%,
+                    rgba(0, 0, 0, 0) 85%,
+                    rgba(0, 0, 0, 0.95) 100%);
         }
 
         /* スクロールするリスト */
@@ -85,7 +88,8 @@
         }
 
         .slot-item {
-            height: 80px; /* 1アイテムの高さ (240px / 3) */
+            height: 92px;
+            /* 1アイテムの高さ (276px / 3) */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -122,10 +126,11 @@
             color: #555;
             position: absolute;
             bottom: 4px;
-            opacity: 0; /* 初期状態は非表示 */
+            opacity: 0;
+            /* 初期状態は非表示 */
             transition: opacity 0.3s;
         }
-        
+
         .ruby-visible .ruby-text {
             opacity: 1;
         }
@@ -137,11 +142,15 @@
             box-shadow: 0 4px 0 #222;
             transition: all 0.1s;
         }
-        .stop-btn:active, .stop-btn.pressed {
+
+        .stop-btn:active,
+        .stop-btn.pressed {
             transform: translateY(4px);
             box-shadow: 0 0 0 #222;
         }
-        .stop-btn:disabled, .stop-btn.disabled-visual {
+
+        .stop-btn:disabled,
+        .stop-btn.disabled-visual {
             background-color: var(--button-disabled);
             cursor: not-allowed;
             transform: translateY(4px);
@@ -156,7 +165,8 @@
             display: flex;
             align-items: flex-end;
             justify-content: center;
-            z-index: 150; /* オーバーレイより上 */
+            z-index: 150;
+            /* オーバーレイより上 */
             cursor: pointer;
         }
 
@@ -167,12 +177,13 @@
             border-radius: 10px;
             position: absolute;
             bottom: 0;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
         }
 
         #lever-rod {
             width: 14px;
-            height: 200px; /* 80%の長さ */
+            height: 200px;
+            /* 80%の長さ */
             background: linear-gradient(to right, #999, #eee, #999);
             position: absolute;
             bottom: 20px;
@@ -182,7 +193,8 @@
         }
 
         .lever-pulled #lever-rod {
-            transform: rotateX(180deg) scaleY(0.5); /* 倒れる表現 */
+            transform: rotateX(180deg) scaleY(0.5);
+            /* 倒れる表現 */
         }
 
         #lever-head {
@@ -199,13 +211,41 @@
             color: white;
             font-size: 0.8rem;
             font-weight: bold;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
+            transition: box-shadow 0.3s, color 0.3s;
+        }
+
+        /* スタート画面のみ: SETの明滅 */
+        @keyframes leverIdlePulse {
+
+            0%,
+            100% {
+                color: rgba(255, 255, 255, 0.5);
+                box-shadow:
+                    0 5px 10px rgba(0, 0, 0, 0.5),
+                    0 0 0 rgba(255, 220, 80, 0);
+            }
+
+            50% {
+                color: #ffffff;
+                box-shadow:
+                    0 5px 10px rgba(0, 0, 0, 0.5),
+                    0 0 18px 4px rgba(255, 235, 9, 0.75),
+                    inset 0 0 8px rgba(255, 229, 28, 0.4);
+            }
+        }
+
+        #lever-head.lever-idle {
+            animation: leverIdlePulse 1.4s ease-in-out infinite;
         }
 
         /* オーバーレイ */
         #production-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-color: rgba(0, 0, 0, 0.95);
             z-index: 100;
             display: flex;
@@ -214,7 +254,7 @@
             flex-direction: column;
             transition: opacity 0.5s;
         }
-        
+
         .overlay-hidden {
             opacity: 0;
             pointer-events: none;
@@ -222,37 +262,219 @@
 
         /* 演出テキストエフェクト */
         .effect-gold {
+            text-shadow: 0px 0px 10px rgba(252, 246, 186, 0.8);
+        }
+
+        .effect-gold .word-initial,
+        .effect-gold .word-rest {
             background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            display: inline-block;
+            -webkit-text-fill-color: transparent;
             text-shadow: 0px 0px 10px rgba(252, 246, 186, 0.8);
             animation: shine 2s infinite linear;
             background-size: 200% auto;
-        }
-        
-        .effect-gold .word-initial,
-        .effect-gold .word-rest {
-            color: transparent;
+            /* 黒フチ + 影 */
+            filter:
+                drop-shadow(-0.5px -0.5px 0 rgba(60, 60, 100, 0.4)) drop-shadow(0.5px -0.5px 0 rgba(60, 60, 100, 0.4)) drop-shadow(-0.5px 0.5px 0 rgba(60, 60, 100, 0.4)) drop-shadow(0.5px 0.5px 0 rgba(60, 60, 100, 0.4));
         }
 
         .effect-rainbow {
+            text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .effect-rainbow .word-initial,
+        .effect-rainbow .word-rest {
             background: linear-gradient(to right, red, orange, yellow, green, cyan, blue, violet);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+            display: inline-block;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 0px 12px rgba(255, 255, 255, 0.7);
             animation: shine 2s infinite linear;
             background-size: 200% auto;
+            /* 黒フチ + 影 */
+            filter:
+                drop-shadow(-0.5px -0.5px 0 rgba(60, 60, 100, 0.4)) drop-shadow(0.5px -0.5px 0 rgba(60, 60, 100, 0.4)) drop-shadow(-0.5px 0.5px 0 rgba(60, 60, 100, 0.4)) drop-shadow(0.5px 0.5px 0 rgba(60, 60, 100, 0.4));
         }
-        
-        .effect-rainbow .word-initial,
-        .effect-rainbow .word-rest {
-            color: transparent;
+
+        .stop-btn.button-win-gold {
+            animation: buttonPulseGold 0.9s ease-in-out infinite;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.95);
+        }
+
+        .stop-btn.button-win-yellow {
+            animation: buttonPulseYellow 0.9s ease-in-out infinite;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.95);
+        }
+
+        .stop-btn .btn-label {
+            display: inline-block;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .stop-btn.button-near-miss .btn-label {
+            animation: buttonGlowPulse 0.7s ease-in-out infinite;
+            color: #fff3a6;
+            text-shadow: 0 0 10px rgba(255, 243, 166, 0.95);
+        }
+
+        .word-container.near-miss-wobble {
+            display: inline-flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.1em;
+            width: auto;
+            white-space: nowrap;
+            animation: nearMissWobble 0.35s ease-in-out infinite;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .slot-item.jackpot-center-only {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .panel-container.win-gold {
+            animation: panelFlashGold 0.8s ease-out;
+            box-shadow: 0 0 0 6px rgba(255, 215, 0, 0.75), 0 0 24px rgba(255, 215, 0, 0.85);
+            border-color: #ffd700;
+        }
+
+        .panel-container.win-rainbow {
+            animation: panelFlashRainbow 0.8s ease-out;
+            box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.8), 0 0 24px rgba(255, 255, 255, 0.95);
+            border-color: #ffffff;
+        }
+
+        .panel-container.win-white {
+            box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.95), 0 0 34px rgba(255, 255, 255, 0.9);
+        }
+
+        .screen-shake {
+            animation: screenShake 0.5s ease-out;
         }
 
         @keyframes shine {
-            to { background-position: 200% center; }
+            to {
+                background-position: 200% center;
+            }
+        }
+
+        @keyframes nearMissWobble {
+
+            0%,
+            100% {
+                transform: translateX(0) rotate(0deg);
+            }
+
+            25% {
+                transform: translateX(-4px) rotate(-2deg);
+            }
+
+            50% {
+                transform: translateX(4px) rotate(2deg);
+            }
+
+            75% {
+                transform: translateX(-3px) rotate(-1deg);
+            }
+        }
+
+        @keyframes screenShake {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            20% {
+                transform: translate(-6px, -4px);
+            }
+
+            40% {
+                transform: translate(6px, 4px);
+            }
+
+            60% {
+                transform: translate(-4px, 2px);
+            }
+
+            80% {
+                transform: translate(4px, -2px);
+            }
+        }
+
+        @keyframes buttonPulseGold {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 0 #222, 0 0 0 rgba(255, 215, 0, 0);
+            }
+
+            50% {
+                box-shadow: 0 4px 0 #222, 0 0 18px rgba(255, 215, 0, 0.9);
+            }
+        }
+
+        @keyframes buttonPulseYellow {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 0 #222, 0 0 0 rgba(255, 215, 0, 0);
+            }
+
+            50% {
+                box-shadow: 0 4px 0 #222, 0 0 18px rgba(255, 215, 0, 0.9);
+            }
+        }
+
+        @keyframes buttonGlowPulse {
+
+            0%,
+            100% {
+                text-shadow: 0 0 0 rgba(255, 243, 166, 0);
+            }
+
+            50% {
+                text-shadow: 0 0 14px rgba(255, 243, 166, 0.95);
+            }
+        }
+
+        @keyframes panelFlashGold {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.6);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(255, 215, 0, 0.8), 0 0 24px rgba(255, 215, 0, 0.95);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+            }
+        }
+
+        @keyframes panelFlashRainbow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.9), 0 0 24px rgba(255, 255, 255, 1);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
         }
 
         /* 紙吹雪キャンバス */
@@ -266,14 +488,118 @@
             z-index: 50;
         }
 
+        /* キラキラキャンバス */
+        #sparkle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 55;
+        }
+
+        /* 当たりフラッシュオーバーレイ */
+        #win-flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            pointer-events: none;
+            z-index: 90;
+            opacity: 0;
+        }
+
+        @keyframes winFlash {
+            0% {
+                opacity: 1;
+            }
+
+            /* 発光、1回目 開始 */
+            33.33% {
+                opacity: 0;
+            }
+
+            /* 発光、1回目 終了 (0.5s) */
+            49.99% {
+                opacity: 0;
+            }
+
+            /* 休み 終了 (0.75s) */
+            50% {
+                opacity: 1;
+            }
+
+            /* 発光、2回目 開始 (即時切り替え) */
+            100% {
+                opacity: 0;
+            }
+
+            /* 発光、2回目 終了 (1.5s) */
+        }
+
+        .win-flash-active {
+            animation: winFlash 1.5s linear forwards;
+        }
+
+        /* アイコンリンクボタン */
+        #icon-link-btn {
+            position: relative;
+            background: linear-gradient(145deg, #9a9a9a, #707070);
+            border-radius: 12px;
+            border: 3px solid #555;
+            cursor: pointer;
+            width: auto;
+            height: auto;
+            overflow: hidden;
+            box-shadow: 0 5px 0 #3a3a3a, 0 7px 14px rgba(0, 0, 0, 0.4);
+            transition: box-shadow 0.1s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 10px;
+        }
+
+        #icon-link-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #3a3a3a, 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        #icon-img {
+            width: auto;
+            height: 50px;
+            object-fit: contain;
+            transition: filter 0.4s ease;
+            pointer-events: none;
+            display: block;
+        }
+
+        #icon-img.win-color {
+            filter: invert(1) sepia(1) saturate(15) hue-rotate(5deg);
+        }
+
+        /* アイコンボタンのラッパー */
+        #icon-btn-wrapper {
+            margin-top: 64px;
+            display: flex;
+            justify-content: center;
+        }
     </style>
 </head>
+
 <body>
+
+    <!-- 当たりフラッシュオーバーレイ -->
+    <div id="win-flash-overlay"></div>
+
+    <!-- キラキラキャンバス -->
+    <canvas id="sparkle-canvas"></canvas>
 
     <!-- 本番用オーバーレイ -->
     <div id="production-overlay">
         <h1 class="text-white text-5xl md:text-7xl font-bold mb-8 tracking-widest">What Is EDP?</h1>
-        <p class="text-gray-400 animate-pulse">Click the SET lever to start</p>
     </div>
 
     <!-- 紙吹雪用キャンバス -->
@@ -281,47 +607,55 @@
 
     <div id="app-wrapper">
         <div class="flex items-end justify-center gap-8 h-full pb-20 md:pb-0 md:items-center">
-        
-        <!-- スロットマシン本体 -->
-        <div id="slot-machine" class="p-6 md:p-10 flex flex-col items-center relative z-10">
-            <!-- パネルコンテナ (E, D, P) -->
-            <div class="flex gap-2 md:gap-4 mb-6">
-                <!-- E列 -->
-                <div class="flex flex-col items-center gap-4">
-                    <div class="panel-container w-32 md:w-48 bg-white">
-                        <ul id="slot-list-e" class="slot-list"></ul>
-                    </div>
-                    <button id="btn-stop-e" class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none">E</button>
-                </div>
-                <!-- D列 -->
-                <div class="flex flex-col items-center gap-4">
-                    <div class="panel-container w-32 md:w-48 bg-white">
-                        <ul id="slot-list-d" class="slot-list"></ul>
-                    </div>
-                    <button id="btn-stop-d" class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none">D</button>
-                </div>
-                <!-- P列 -->
-                <div class="flex flex-col items-center gap-4">
-                    <div class="panel-container w-32 md:w-48 bg-white">
-                        <ul id="slot-list-p" class="slot-list"></ul>
-                    </div>
-                    <button id="btn-stop-p" class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none">P</button>
-                </div>
-            </div>
-            
-            <div class="text-white text-sm opacity-80 mt-2">
-                 Stop: E, D, P / Lever: S 
-            </div>
-        </div>
 
-        <!-- レバー -->
-        <div id="lever-wrapper" onclick="triggerEvent('start')">
-            <div id="lever-slot"></div>
-            <div id="lever-rod">
-                <div id="lever-head">SET</div>
+            <!-- スロットマシン本体 -->
+            <div id="slot-machine" class="p-6 md:p-10 flex flex-col items-center relative z-10">
+                <!-- パネルコンテナ (E, D, P) -->
+                <div class="flex gap-2 md:gap-4 mb-6">
+                    <!-- E列 -->
+                    <div class="flex flex-col items-center gap-8">
+                        <div class="panel-container w-32 md:w-48 bg-white">
+                            <ul id="slot-list-e" class="slot-list"></ul>
+                        </div>
+                        <button id="btn-stop-e"
+                            class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none"><span
+                                class="btn-label">E</span></button>
+                    </div>
+                    <!-- D列 -->
+                    <div class="flex flex-col items-center gap-8">
+                        <div class="panel-container w-32 md:w-48 bg-white">
+                            <ul id="slot-list-d" class="slot-list"></ul>
+                        </div>
+                        <button id="btn-stop-d"
+                            class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none"><span
+                                class="btn-label">D</span></button>
+                    </div>
+                    <!-- P列 -->
+                    <div class="flex flex-col items-center gap-8">
+                        <div class="panel-container w-32 md:w-48 bg-white">
+                            <ul id="slot-list-p" class="slot-list"></ul>
+                        </div>
+                        <button id="btn-stop-p"
+                            class="stop-btn w-16 h-16 md:w-20 md:h-20 rounded-full text-white font-bold text-xl md:text-2xl cursor-pointer outline-none"><span
+                                class="btn-label">P</span></button>
+                    </div>
+                </div>
+
+                <div id="icon-btn-wrapper">
+                    <button id="icon-link-btn" onclick="handleIconClick()">
+                        <img id="icon-img" src="icon.png" alt="EDP">
+                    </button>
+                </div>
+            </div>
+
+            <!-- レバー -->
+            <div id="lever-wrapper" onclick="triggerEvent('start')">
+                <div id="lever-slot"></div>
+                <div id="lever-rod">
+                    <div id="lever-head" class="lever-idle">SET</div>
+                </div>
             </div>
         </div>
-    </div>
     </div>
 
     <script>
@@ -377,35 +711,35 @@
 
         const WORD_DATA = {
             "E": [
-                { "word": "Echigo", "ruby": "越後" },
-                { "word": "Electronic", "ruby": "電子" },
-                { "word": "Eikaiwa", "ruby": "英会話" },
-                { "word": "Egoist", "ruby": "エゴイスト" },
-                { "word": "Engineer", "ruby": "エンジニア" }
+                { "word": "Echigo", "ruby": "越後", "ruby_roman": "Echigo" },
+                { "word": "Eikaiwa", "ruby": "英会話", "ruby_roman": "Eikaiwa" },
+                { "word": "Electronic", "ruby": "電子", "ruby_roman": "Electronic" },
+                { "word": "Egoist", "ruby": "エゴイスト", "ruby_roman": "Egoist" },
+                { "word": "Engineer", "ruby": "エンジニア", "ruby_roman": "Engineer" }
             ],
             "D": [
-                { "word": "Dangerous", "ruby": "デンジャラス" },
-                { "word": "Data", "ruby": "データ" },
-                { "word": "Dopamine", "ruby": "ドーパミン" },
-                { "word": "Dokagui", "ruby": "ドカ食い" },
-                { "word": "Dance", "ruby": "ダンス" },
-                { "word": "Deadline", "ruby": "締め切り" },
-                { "word": "Donguri", "ruby": "どんぐり" }
+                { "word": "Dangerous", "ruby": "デンジャラス", "ruby_roman": "Dangerous" },
+                { "word": "Dopamine", "ruby": "ドーパミン", "ruby_roman": "Dopamine" },
+                { "word": "Data", "ruby": "データ", "ruby_roman": "Data" },
+                { "word": "Dokagui", "ruby": "ドカ食い", "ruby_roman": "Dokagui" },
+                { "word": "Dance", "ruby": "ダンス", "ruby_roman": "Dance" },
+                { "word": "Deadline", "ruby": "締め切り", "ruby_roman": "Deadline" },
+                { "word": "Donguri", "ruby": "どんぐり", "ruby_roman": "Donguri" }
             ],
             "P": [
-                { "word": "People", "ruby": "ピーポー" },
-                { "word": "Processing", "ruby": "処理部" },
-                { "word": "Plan", "ruby": "計画" },
-                { "word": "Paradise", "ruby": "パラダイス" },
-                { "word": "Problem", "ruby": "問題" },
-                { "word": "Panic", "ruby": "パニック" },
+                { "word": "People", "ruby": "ピーポー", "ruby_roman": "People" },
+                { "word": "Plan", "ruby": "計画", "ruby_roman": "Plan" },
+                { "word": "Paradise", "ruby": "パラダイス", "ruby_roman": "Paradise" },
+                { "word": "Problem", "ruby": "問題", "ruby_roman": "Problem" },
+                { "word": "Processing", "ruby": "処理", "ruby_roman": "Processing" },
+                { "word": "Panic", "ruby": "パニック", "ruby_roman": "Panic" },
             ]
         };
 
         // -----------------------------------------------------------------
         // 2. システム定数・状態管理
         // -----------------------------------------------------------------
-        const ITEM_HEIGHT = 80; // 1アイテムの高さ(px)
+        const ITEM_HEIGHT = 92; // 1アイテムの高さ(px)
         const LOOP_COUNT = 20;  // 描画用に配列をループさせる回数（シームレス化により削減）
 
         const state = {
@@ -414,12 +748,14 @@
             forceResult: null, // テスト用強制フラグ
             fullReadTimeout: null,
             columns: {
-                'e': { id: 'e', words: WORD_DATA.E, isSpinning: false, isStopped: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null },
-                'd': { id: 'd', words: WORD_DATA.D, isSpinning: false, isStopped: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null },
-                'p': { id: 'p', words: WORD_DATA.P, isSpinning: false, isStopped: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null }
+                'e': { id: 'e', words: WORD_DATA.E, isSpinning: false, isStopped: false, isSettled: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null, centerWord: '', stoppedWord: '', targetWord: '', resultWord: '' },
+                'd': { id: 'd', words: WORD_DATA.D, isSpinning: false, isStopped: false, isSettled: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null, centerWord: '', stoppedWord: '', targetWord: '', resultWord: '' },
+                'p': { id: 'p', words: WORD_DATA.P, isSpinning: false, isStopped: false, isSettled: false, currentPos: 0, velocity: 0, resultIndex: 0, element: null, centerWord: '', stoppedWord: '', targetWord: '', resultWord: '' }
             },
             animationFrameId: null,
-            lastTime: 0
+            lastTime: 0,
+            outcomeEffectsPlayed: false,
+            isWin: false
         };
 
         // -----------------------------------------------------------------
@@ -429,29 +765,29 @@
             ['e', 'd', 'p'].forEach(col => {
                 const listEl = document.getElementById(`slot-list-${col}`);
                 state.columns[col].element = listEl;
-                
+
                 // 無限スクロール用に配列を複数回展開してDOMを生成
                 let html = '';
                 // 最初は少し余裕をもたせるために先頭にダミーを追加（パチスロ風の見た目のため）
                 const totalItems = state.columns[col].words.length * LOOP_COUNT;
-                
+
                 for (let i = 0; i < totalItems; i++) {
                     const wordObj = state.columns[col].words[i % state.columns[col].words.length];
                     const initial = wordObj.word.charAt(0);
                     const rest = wordObj.word.slice(1);
-                    
+
                     html += `
                         <li class="slot-item" id="item-${col}-${i}">
                             <div class="word-container">
-                                <span class="word-initial">${initial}</span>
-                                <span class="word-rest">${rest}</span>
+                                <span class="word-initial" data-original-initial="${initial}">${initial}</span>
+                                <span class="word-rest" data-original-rest="${rest}">${rest}</span>
                             </div>
                             <span class="ruby-text">${wordObj.ruby}</span>
                         </li>
                     `;
                 }
                 listEl.innerHTML = html;
-                
+
                 // 初期位置：最初の要素が中央(ITEM_HEIGHT * 1)にくるように調整。
                 // コンテナの高さは ITEM_HEIGHT * 3 で、中央は 1 のインデックス位置。
                 // translateY = -(item_index * ITEM_HEIGHT) + ITEM_HEIGHT(オフセット)
@@ -466,7 +802,7 @@
 
         function updateColumnPosition(colId, indexOrPos, isPos = false) {
             const col = state.columns[colId];
-            if(isPos) {
+            if (isPos) {
                 col.currentPos = indexOrPos;
             } else {
                 col.currentPos = indexOrPos * ITEM_HEIGHT;
@@ -480,7 +816,7 @@
         // 4. イベント管理 (ロジックとUIの分離)
         // -----------------------------------------------------------------
         function triggerEvent(eventName) {
-            switch(eventName) {
+            switch (eventName) {
                 case 'start':
                     if (state.isOverlayActive) {
                         removeOverlay();
@@ -507,6 +843,9 @@
             state.isOverlayActive = false;
             const overlay = document.getElementById('production-overlay');
             overlay.classList.add('overlay-hidden');
+            // SET明滅を停止
+            const leverHead = document.getElementById('lever-head');
+            if (leverHead) leverHead.classList.remove('lever-idle');
             // 初回インタラクションで音声の許可を取るため、無音再生
             unlockSpeech();
         }
@@ -529,6 +868,7 @@
         function startSlot() {
             state.isPlaying = true;
             state.forceResult = null; // テスト用強制フラグをリセット
+            state.outcomeEffectsPlayed = false;
             // 新しいプレイ開始時は保留中の全体読み上げをクリア
             if (state.fullReadTimeout) {
                 clearTimeout(state.fullReadTimeout);
@@ -536,24 +876,30 @@
             }
             // 優先して既存の合成音声をキャンセル
             if (window.speechSynthesis) window.speechSynthesis.cancel();
-            
-            // レバー演出
+
+            // レバー演出: .lever-pulled のアニメーションを 750ms 維持して倒れた状態を見せる
             const lever = document.getElementById('lever-wrapper');
             lever.classList.add('lever-pulled');
-            setTimeout(() => lever.classList.remove('lever-pulled'), 300);
-            
+            setTimeout(() => lever.classList.remove('lever-pulled'), 750);
+
             // 音声: レバーは従来どおりTTSで "ガチャン" と読み上げる
             speak(CONFIG.sound.events.lever);
-            
+
             // 初期化
             resetVisualEffects();
             stopConfetti();
-            
+            triggerLeverReaction();
+
             ['e', 'd', 'p'].forEach(col => {
                 const c = state.columns[col];
                 c.isSpinning = true;
                 c.isStopped = false;
-                
+                c.isSettled = false;
+                c.centerWord = '';
+                c.stoppedWord = '';
+                c.targetWord = '';
+                c.resultWord = '';
+
                 // ボタン初期化
                 const btn = document.getElementById(`btn-stop-${col}`);
                 btn.classList.remove('disabled-visual', 'pressed');
@@ -562,7 +908,7 @@
                 // 速度計算：1周500ms
                 // 1秒あたりの移動ピクセル数 = (アイテム数 * 高) / (500ms / 1000)
                 const totalHeightPerCycle = c.words.length * ITEM_HEIGHT;
-                c.velocity = totalHeightPerCycle / (CONFIG.slot.rotationTimePerCycle / 1000); 
+                c.velocity = totalHeightPerCycle / (CONFIG.slot.rotationTimePerCycle / 1000);
             });
 
             state.lastTime = performance.now();
@@ -571,30 +917,26 @@
             }
         }
 
+        function triggerLeverReaction() {
+            const wrapper = document.getElementById('app-wrapper');
+            if (wrapper) {
+                wrapper.classList.remove('screen-shake');
+                void wrapper.offsetWidth;
+                wrapper.classList.add('screen-shake');
+            }
+            playBeep('lever');
+        }
+
         function stopSlot(colId) {
             const col = state.columns[colId];
             if (!state.isPlaying || !col.isSpinning || col.isStopped) return;
 
             col.isStopped = true;
-            
-            // ボタンの視覚変更
-            const btn = document.getElementById(`btn-stop-${colId}`);
-            btn.classList.add('disabled-visual', 'pressed');
-            btn.disabled = true;
-
-            // 停止音はWebAudioで即時再生
-            playBeep('stop');
-
-            // 停止目標位置の計算
-            // 目的: ボタン押下時に正面（中央）に表示されているアイテムが
-            // 1回転（配列長分）してから同じ位置に停止するようにする。
             const oneCycle = col.words.length;
             const currentAbsolute = Math.round(col.currentPos / ITEM_HEIGHT);
-            // 半回転後に停止する（1/2 周）
             const halfCycle = Math.round(oneCycle / 2);
             let targetItemIndex = currentAbsolute + halfCycle;
 
-            // テスト用: 強制結果指定がある場合は、そのワードが未来の位置に来るよう調整
             if (state.forceResult) {
                 const patternIdx = state.forceResult === 'patternA' ? 0 : 1;
                 const colIdxMap = { 'e': 0, 'd': 1, 'p': 2 };
@@ -608,6 +950,24 @@
                 }
             }
 
+            const targetWord = col.words[targetItemIndex % col.words.length]?.word || '';
+            col.targetWord = targetWord;
+            col.stoppedWord = targetWord;
+            col.resultWord = targetWord;
+            const matchedIndex = col.words.findIndex(w => w.word === targetWord);
+            if (matchedIndex !== -1) {
+                col.resultIndex = matchedIndex;
+            }
+
+            // ボタンの視覚変更
+            const btn = document.getElementById(`btn-stop-${colId}`);
+            btn.classList.add('disabled-visual', 'pressed');
+            btn.disabled = true;
+
+            // 停止音はWebAudioで即時再生
+            playBeep('stop');
+
+            // 停止目標位置の計算
             col.targetPos = targetItemIndex * ITEM_HEIGHT;
             col.stopStartTime = performance.now();
             col.startPos = col.currentPos;
@@ -619,18 +979,19 @@
             const deltaTime = (timestamp - state.lastTime) / 1000; // 秒
             state.lastTime = timestamp;
 
-            let allStopped = true;
+            const hasPendingAnimation = ['e', 'd', 'p'].some(colId => {
+                const col = state.columns[colId];
+                return col.isSpinning || !!col.settleAnimId;
+            });
 
             ['e', 'd', 'p'].forEach(colId => {
                 const col = state.columns[colId];
                 if (!col.isSpinning) return;
-                
-                allStopped = false;
 
                 if (!col.isStopped) {
                     // 通常回転
                     col.currentPos += col.velocity * deltaTime;
-                    
+
                     // 無限スクロールのシームレスループ処理
                     // 2周分を超えたら1周分巻き戻すことで、DOM要素の枯渇（空白化）を防ぐ
                     const oneCycleHeight = col.words.length * ITEM_HEIGHT;
@@ -665,10 +1026,19 @@
                 updateColumnPosition(colId, col.currentPos, true);
             });
 
-            if (allStopped) {
+            ['e', 'd', 'p'].forEach(colId => {
+                syncCenterWordState(colId);
+            });
+
+            if (!hasPendingAnimation) {
                 state.animationFrameId = null;
                 state.isPlaying = false;
-                checkJackpot(); // 当たり判定
+
+                if (!state.outcomeEffectsPlayed) {
+                    state.outcomeEffectsPlayed = true;
+                    updateNearMissEffect();
+                    checkJackpot(); // 当たり判定
+                }
 
                 // 3つ全て停止した2秒後に、英単語ではなくルビを読ませる（読点で区切って自然な間を作る）
                 if (state.fullReadTimeout) {
@@ -677,12 +1047,13 @@
                 }
                 state.fullReadTimeout = setTimeout(() => {
                     try {
-                        const rE = state.columns['e'].words[state.columns['e'].resultIndex].ruby || '';
-                        const rD = state.columns['d'].words[state.columns['d'].resultIndex].ruby || '';
-                        const rP = state.columns['p'].words[state.columns['p'].resultIndex].ruby || '';
-                        const text = [rE, rD, rP].filter(t => t).join('、');
-                        if (text) speak(text);
-                    } catch (e) {}
+                        // 全体読み上げは常にMicrosoft Zira（英語）でruby_romanを読む
+                        const rE = state.columns['e'].words[state.columns['e'].resultIndex].ruby_roman || '';
+                        const rD = state.columns['d'].words[state.columns['d'].resultIndex].ruby_roman || '';
+                        const rP = state.columns['p'].words[state.columns['p'].resultIndex].ruby_roman || '';
+                        const text = [rE, rD, rP].filter(t => t).join(' ');
+                        if (text) speak(text, true);
+                    } catch (e) { }
                     state.fullReadTimeout = null;
                 }, 2000);
             } else {
@@ -695,6 +1066,8 @@
             // 停止インデックスを確定 (ループを考慮して元の配列インデックスに丸める)
             const absoluteIndex = Math.round(col.targetPos / ITEM_HEIGHT);
             col.resultIndex = absoluteIndex % col.words.length;
+            col.resultWord = col.words[col.resultIndex]?.word || col.targetWord || '';
+            col.stoppedWord = col.resultWord;
 
             // オーバーシュート: 最終位置の少し手前で通り過ぎる表現を実装
             const overshoot = ITEM_HEIGHT * 0.25; // 1/4アイテム分通り過ぎる
@@ -744,7 +1117,9 @@
                             updateColumnPosition(colId, settleEnd, true);
                             // ルビを表示する
                             const itemEl = document.getElementById(`item-${colId}-${absoluteIndex}`);
-                            if(itemEl) itemEl.classList.add('ruby-visible');
+                            if (itemEl) itemEl.classList.add('ruby-visible');
+                            col.isSettled = true;
+                            updateNearMissEffect();
                             // 停止した単語のルビを読み上げ
                             const rubyText = col.words[col.resultIndex] && col.words[col.resultIndex].ruby ? col.words[col.resultIndex].ruby : '';
                             if (rubyText) speak(rubyText);
@@ -760,18 +1135,34 @@
         // -----------------------------------------------------------------
         // 6. 音声合成と演出
         // -----------------------------------------------------------------
-        function speak(text) {
+        function speak(text, useEnglish = false) {
             // null/undefined は何もしない。空文字列は許可して "アンロック" に使える
             if (text == null) return;
 
             // 強制的に前の音声をキャンセルして新しい発話を優先
-            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { }
 
             const u = new SpeechSynthesisUtterance(text === '' ? ' ' : text);
-            u.lang = CONFIG.sound.voice.lang;
-            u.rate = CONFIG.sound.voice.rate;
-            u.pitch = CONFIG.sound.voice.pitch;
-            u.volume = CONFIG.sound.voice.volume;
+
+            if (useEnglish) {
+                // 当たり演出用: Microsoft Zira (英語) を優先使用
+                u.lang = 'en-US';
+                u.rate = 0.85;
+                u.pitch = 1.0;
+                u.volume = 1.0;
+                try {
+                    const voices = window.speechSynthesis.getVoices();
+                    const zira = voices.find(v => v.name.includes('Zira'));
+                    const englishVoice = zira || voices.find(v => v.lang === 'en-US') || null;
+                    if (englishVoice) u.voice = englishVoice;
+                } catch (e) { }
+            } else {
+                u.lang = CONFIG.sound.voice.lang;
+                u.rate = CONFIG.sound.voice.rate;
+                u.pitch = CONFIG.sound.voice.pitch;
+                u.volume = CONFIG.sound.voice.volume;
+            }
+
             window.speechSynthesis.speak(u);
         }
 
@@ -790,7 +1181,7 @@
             initAudio();
             if (!_audioCtx) return;
             // resume していないと iOS 等で鳴らない
-            _audioCtx.resume().catch(()=>{});
+            _audioCtx.resume().catch(() => { });
 
             const now = _audioCtx.currentTime;
             const gain = _audioCtx.createGain();
@@ -811,60 +1202,107 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 osc.start(now);
                 osc.stop(now + dur + 0.02);
-            } else if (type === 'jackA_short' || type === 'jackB_short') {
-                // 短い「キューン」: 短時間の上昇
-                const duration = type === 'jackA_short' ? 0.22 : 0.26;
-                const osc1 = _audioCtx.createOscillator();
-                const g = _audioCtx.createGain();
-                osc1.type = type === 'jackA_short' ? 'sawtooth' : 'square';
-                const f0 = type === 'jackA_short' ? 700 : 800;
-                const f1 = type === 'jackA_short' ? 1500 : 1700;
-                osc1.frequency.setValueAtTime(f0, now);
-                osc1.frequency.exponentialRampToValueAtTime(f1, now + duration * 0.9);
-                g.gain.setValueAtTime(0.0001, now);
-                g.gain.linearRampToValueAtTime(CONFIG.sound.beep.volume, now + 0.01);
-                g.gain.exponentialRampToValueAtTime(0.001, now + duration);
-                osc1.connect(g);
-                g.connect(_audioCtx.destination);
-                osc1.start(now);
-                osc1.stop(now + duration + 0.02);
-                setTimeout(() => { try { osc1.disconnect(); g.disconnect(); } catch(e){} }, (duration + 0.2) * 1000);
-            } else if (type === 'jackA_long' || type === 'jackB_long') {
-                // 長い「キュイーン」: デチューンとビブラートを加えながらゆっくり上昇
-                const duration = type === 'jackA_long' ? 0.9 : 1.1;
-                const osc1 = _audioCtx.createOscillator();
-                const osc2 = _audioCtx.createOscillator();
-                const g = _audioCtx.createGain();
-                const lfo = _audioCtx.createOscillator();
-                const lfoGain = _audioCtx.createGain();
-                osc1.type = type === 'jackA_long' ? 'sawtooth' : 'square';
-                osc2.type = 'sawtooth';
-                const f0 = type === 'jackA_long' ? 600 : 650;
-                const f1 = type === 'jackA_long' ? 2600 : 3000;
-                osc1.frequency.setValueAtTime(f0, now);
-                osc2.frequency.setValueAtTime(f0 * 1.02, now);
-                osc1.frequency.exponentialRampToValueAtTime(f1, now + duration * 0.9);
-                osc2.frequency.exponentialRampToValueAtTime(f1 * 1.01, now + duration * 0.9);
-                // LFO vibrato
-                lfo.type = 'sine';
-                lfo.frequency.setValueAtTime(5.5, now);
-                lfoGain.gain.setValueAtTime(type === 'jackA_long' ? 6 : 10, now);
-                lfo.connect(lfoGain);
-                lfoGain.connect(osc1.frequency);
-                lfoGain.connect(osc2.frequency);
-                g.gain.setValueAtTime(0.0001, now);
-                g.gain.linearRampToValueAtTime(CONFIG.sound.beep.volume, now + 0.02);
-                g.gain.exponentialRampToValueAtTime(0.001, now + duration);
-                osc1.connect(g);
-                osc2.connect(g);
-                g.connect(_audioCtx.destination);
-                osc1.start(now);
-                osc2.start(now + 0.006);
-                lfo.start(now);
-                osc1.stop(now + duration + 0.05);
-                osc2.stop(now + duration + 0.05);
-                lfo.stop(now + duration + 0.05);
-                setTimeout(() => { try { osc1.disconnect(); osc2.disconnect(); g.disconnect(); lfo.disconnect(); lfoGain.disconnect(); } catch(e){} }, (duration + 0.2) * 1000);
+            } else if (type === 'lever') {
+                const duration = 0.2;
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(90, now);
+                osc.frequency.exponentialRampToValueAtTime(55, now + duration);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(CONFIG.sound.beep.volume * 0.95, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc.start(now);
+                osc.stop(now + duration + 0.02);
+            } else if (type === 'jackA' || type === 'jackB') {
+                // パチスロ風「キュインキュイーン」2ピーク設計
+                // 第1ピーク(急上昇) → ブリッジ(音を切らずに繋ぎ) → 第2ピーク(長く高く) + ビブラート + エコー
+                const isA = (type === 'jackA');
+                const vol = CONFIG.sound.beep.volume * 0.8; // 全体音量の80%
+                const totalDur = 1.85;
+
+                // オシレーター2本（コーラス感）
+                const jOsc1 = _audioCtx.createOscillator();
+                const jOsc2 = _audioCtx.createOscillator();
+                const jGain = _audioCtx.createGain();
+                // LFO（ビブラート）
+                const jLfo = _audioCtx.createOscillator();
+                const jLfoGain = _audioCtx.createGain();
+                // ディレイ（エコー）
+                const jDelay = _audioCtx.createDelay(1.0);
+                const jFeedback = _audioCtx.createGain();
+                const jDelayMix = _audioCtx.createGain();
+
+                jOsc1.type = isA ? 'sawtooth' : 'square';
+                jOsc2.type = 'sawtooth';
+
+                // --- 周波数スケジュール ---
+                const p1Start = isA ? 480 : 520;
+                const p1Peak = isA ? 1900 : 2100; // 第1ピーク
+                const bridge = isA ? 420 : 460;  // ブリッジ(一時落とす)
+                const p2Peak = isA ? 3200 : 3600; // 第2ピーク
+
+                jOsc1.frequency.setValueAtTime(p1Start, now);
+                jOsc2.frequency.setValueAtTime(p1Start * 1.006, now);
+                // 第1ピーク (0 ~ 0.22s): 急上昇
+                jOsc1.frequency.exponentialRampToValueAtTime(p1Peak, now + 0.22);
+                jOsc2.frequency.exponentialRampToValueAtTime(p1Peak * 1.006, now + 0.22);
+                // ブリッジ (0.22 ~ 0.44s): 一度落とすことで第2ピークの上昇感を際立たせる
+                jOsc1.frequency.exponentialRampToValueAtTime(bridge, now + 0.44);
+                jOsc2.frequency.exponentialRampToValueAtTime(bridge * 1.006, now + 0.44);
+                // 第2ピーク (0.44 ~ 1.6s): 再度急上昇して高域へ
+                jOsc1.frequency.exponentialRampToValueAtTime(p2Peak, now + 1.6);
+                jOsc2.frequency.exponentialRampToValueAtTime(p2Peak * 1.006, now + 1.6);
+
+                // --- 音量カーブ ---
+                // 第1ピーク: フェードイン → ピーク後に絞るがゼロにしない（ブリッジを繋ぐ）
+                jGain.gain.setValueAtTime(0.0001, now);
+                jGain.gain.linearRampToValueAtTime(vol * 0.9, now + 0.04);      // フェードイン
+                jGain.gain.exponentialRampToValueAtTime(vol * 0.06, now + 0.32);// 第1ピーク後に絞る
+                jGain.gain.setValueAtTime(vol * 0.06, now + 0.40);              // ブリッジ: 低音量で維持
+                // 第2ピーク: 再上昇
+                jGain.gain.linearRampToValueAtTime(vol, now + 0.60);
+                // フェードアウト
+                jGain.gain.exponentialRampToValueAtTime(0.001, now + totalDur);
+
+                // --- LFO（ビブラート）: ブリッジ以降に徐々に深くなる ---
+                jLfo.type = 'sine';
+                jLfo.frequency.setValueAtTime(5.5, now);
+                jLfo.frequency.linearRampToValueAtTime(7.0, now + totalDur);
+                jLfoGain.gain.setValueAtTime(0, now);
+                jLfoGain.gain.setValueAtTime(0, now + 0.44);           // ブリッジまでは無し
+                jLfoGain.gain.linearRampToValueAtTime(isA ? 22 : 28, now + 1.5); // 徐々に深く
+                jLfo.connect(jLfoGain);
+                jLfoGain.connect(jOsc1.frequency);
+                jLfoGain.connect(jOsc2.frequency);
+
+                // --- ディレイ（エコー）: 余韻を出す ---
+                jDelay.delayTime.setValueAtTime(0.14, now);
+                jFeedback.gain.setValueAtTime(0.38, now);
+                jDelayMix.gain.setValueAtTime(0.28, now);
+                jDelay.connect(jFeedback);
+                jFeedback.connect(jDelay); // フィードバックループ
+                jGain.connect(jDelay);
+                jDelay.connect(jDelayMix);
+
+                // 接続
+                jOsc1.connect(jGain);
+                jOsc2.connect(jGain);
+                jGain.connect(_audioCtx.destination);
+                jDelayMix.connect(_audioCtx.destination);
+
+                jOsc1.start(now);
+                jOsc2.start(now + 0.005);
+                jLfo.start(now);
+                const jStop = now + totalDur + 0.6;
+                jOsc1.stop(jStop); jOsc2.stop(jStop); jLfo.stop(jStop);
+
+                setTimeout(() => {
+                    try {
+                        jOsc1.disconnect(); jOsc2.disconnect(); jGain.disconnect();
+                        jLfo.disconnect(); jLfoGain.disconnect();
+                        jDelay.disconnect(); jFeedback.disconnect(); jDelayMix.disconnect();
+                    } catch (e) { }
+                }, (totalDur + 0.9) * 1000);
+
             } else {
                 // デフォルト（短いクリック）
                 osc.type = 'sine';
@@ -877,7 +1315,7 @@
             }
 
             // ノードは自動GCされるが念のため disconnect
-            setTimeout(() => { try { osc.disconnect(); gain.disconnect(); } catch(e){} }, 800);
+            setTimeout(() => { try { osc.disconnect(); gain.disconnect(); } catch (e) { } }, 800);
         }
 
         function unlockSpeech() {
@@ -891,19 +1329,18 @@
                     u.volume = 0; // 無音
                     window.speechSynthesis.speak(u);
                 }
-            } catch (e) {}
+            } catch (e) { }
             // そしてAudioContextの初期化も。
             initAudio();
         }
 
         function checkJackpot() {
-            // 結果の単語を取得
-            const resE = state.columns['e'].words[state.columns['e'].resultIndex].word;
-            const resD = state.columns['d'].words[state.columns['d'].resultIndex].word;
-            const resP = state.columns['p'].words[state.columns['p'].resultIndex].word;
+            const resE = state.columns['e'].resultWord || state.columns['e'].words[state.columns['e'].resultIndex]?.word || '';
+            const resD = state.columns['d'].resultWord || state.columns['d'].words[state.columns['d'].resultIndex]?.word || '';
+            const resP = state.columns['p'].resultWord || state.columns['p'].words[state.columns['p'].resultIndex]?.word || '';
 
             const patterns = CONFIG.jackpot.patterns;
-            
+
             if (resE === patterns[0][0] && resD === patterns[0][1] && resP === patterns[0][2]) {
                 playEffect(CONFIG.sound.events.patternA, CONFIG.jackpot.effects.patternA);
             } else if (resE === patterns[1][0] && resD === patterns[1][1] && resP === patterns[1][2]) {
@@ -911,54 +1348,199 @@
             }
         }
 
-        function playEffect(voiceText, effectConfig) {
-            // 音声は個別の停止時・全体読み上げで処理するため、ここでは発話を行わない
-            
-            // 文字エフェクト
-            const absoluteE = Math.round(state.columns['e'].currentPos / ITEM_HEIGHT);
-            const absoluteD = Math.round(state.columns['d'].currentPos / ITEM_HEIGHT);
-            const absoluteP = Math.round(state.columns['p'].currentPos / ITEM_HEIGHT);
+        function getCenteredWord(colId) {
+            const col = state.columns[colId];
+            const absIdx = Math.round(col.currentPos / ITEM_HEIGHT);
+            const itemEl = document.getElementById(`item-${colId}-${absIdx}`);
+            const initial = itemEl?.querySelector('.word-initial')?.textContent || '';
+            const rest = itemEl?.querySelector('.word-rest')?.textContent || '';
+            return `${initial}${rest}`;
+        }
 
-            ['e', 'd', 'p'].forEach(col => {
-                const absIdx = Math.round(state.columns[col].currentPos / ITEM_HEIGHT);
-                const el = document.getElementById(`item-${col}-${absIdx}`);
-                if (el) {
-                    const textContainer = el.querySelector('.word-container');
-                    textContainer.classList.add(`effect-${effectConfig.textEffect}`);
+        function syncCenterWordState(colId) {
+            const col = state.columns[colId];
+            col.centerWord = getCenteredWord(colId);
+        }
+
+        function getNearMissColumns() {
+            const patterns = [
+                ['Electronic', 'Data', 'Processing'],
+                ['Echigo', 'Dangerous', 'People']
+            ];
+            const columns = ['e', 'd', 'p'];
+
+            for (const pattern of patterns) {
+                const matchingCols = columns.filter(colId => {
+                    const col = state.columns[colId];
+                    return col.isStopped && col.resultWord === pattern[columns.indexOf(colId)];
+                });
+
+                if (matchingCols.length === 2) {
+                    const pendingCol = columns.find(colId => !matchingCols.includes(colId));
+                    const pending = pendingCol ? state.columns[pendingCol] : null;
+                    if (pending && (pending.isSpinning || (pending.isStopped && !pending.isSettled))) {
+                        return matchingCols;
+                    }
+                }
+            }
+            return [];
+        }
+
+        function updateNearMissEffect() {
+            document.querySelectorAll('.stop-btn.button-near-miss').forEach(el => {
+                el.classList.remove('button-near-miss');
+            });
+            document.querySelectorAll('.word-container.near-miss-wobble').forEach(el => {
+                el.classList.remove('near-miss-wobble');
+            });
+
+            const nearMissColumns = getNearMissColumns();
+            if (nearMissColumns.length === 0) return;
+
+            nearMissColumns.forEach(colId => {
+                const btn = document.getElementById(`btn-stop-${colId}`);
+                if (btn) {
+                    btn.classList.add('button-near-miss');
+                }
+
+                const col = state.columns[colId];
+                const absIdx = Math.round(col.currentPos / ITEM_HEIGHT);
+                const itemEl = document.getElementById(`item-${colId}-${absIdx}`);
+                const wordContainer = itemEl?.querySelector('.word-container');
+                if (wordContainer) {
+                    wordContainer.classList.add('near-miss-wobble');
                 }
             });
+        }
+
+        function glowButtons(patternKey) {
+            ['e', 'd', 'p'].forEach(colId => {
+                const btn = document.getElementById(`btn-stop-${colId}`);
+                if (!btn) return;
+                btn.classList.remove('button-win-gold', 'button-win-yellow');
+                btn.classList.add('button-win-yellow');
+            });
+        }
+
+        function restoreOriginalLetters() {
+            document.querySelectorAll('.slot-item .word-initial').forEach(el => {
+                el.textContent = el.dataset.originalInitial || el.textContent;
+            });
+            document.querySelectorAll('.slot-item .word-rest').forEach(el => {
+                el.textContent = el.dataset.originalRest || el.textContent;
+            });
+        }
+
+        function playEffect(voiceText, effectConfig) {
+            // 音声は個別の停止時・全体読み上げで処理するため、ここでは発話を行わない
+            const patternKey = voiceText === CONFIG.sound.events.patternA ? 'patternA' : 'patternB';
+            const effectClass = patternKey === 'patternA' ? 'win-gold' : 'win-rainbow';
+
+            // 当たり状態をセット
+            state.isWin = true;
+
+            // 画面を白くフラッシュさせる
+            triggerWinFlash();
+
+            // アイコンボタンの色を黄色に反転
+            const iconImg = document.getElementById('icon-img');
+            if (iconImg) iconImg.classList.add('win-color');
+
+            glowButtons(patternKey);
+            applyJackpotCenterOnlyEffect();
+            ['e', 'd', 'p'].forEach(colId => {
+                const col = state.columns[colId];
+                const absIdx = Math.round(col.currentPos / ITEM_HEIGHT);
+                const el = document.getElementById(`item-${colId}-${absIdx}`);
+                if (el) {
+                    const textContainer = el.querySelector('.word-container');
+                    if (textContainer) {
+                        textContainer.classList.add(`effect-${effectConfig.textEffect}`);
+                    }
+                }
+            });
+            flashPanels(effectClass);
 
             // 紙吹雪
             if (effectConfig.useConfetti) {
                 startConfetti();
             }
 
-            // 当たり演出に合わせて高音の効果音を1秒遅延で再生（短い「キューン」＋長い「キュイーン」）
+            // キラキラ背景を開始
+            startSparkle();
+
+            // 当たり演出音（2ピーク連続「キュインキュイーン」）を少し遅延して再生
             try {
-                if (voiceText === CONFIG.sound.events.patternA) {
-                    // 短音と長音を重ねる（短音を短く、長音を早めに開始）
-                    setTimeout(() => {
-                        playBeep('jackA_short');
-                        setTimeout(() => playBeep('jackA_long'), 120);
-                    }, 1000);
-                } else if (voiceText === CONFIG.sound.events.patternB) {
-                    setTimeout(() => {
-                        playBeep('jackB_short');
-                        setTimeout(() => playBeep('jackB_long'), 140);
-                    }, 1000);
+                const beepType = voiceText === CONFIG.sound.events.patternA ? 'jackA' : 'jackB';
+                setTimeout(() => playBeep(beepType), 300);
+            } catch (e) { }
+        }
+
+        function applyJackpotCenterOnlyEffect() {
+            ['e', 'd', 'p'].forEach(colId => {
+                const col = state.columns[colId];
+                const absIdx = Math.round(col.currentPos / ITEM_HEIGHT);
+                const items = document.querySelectorAll(`#slot-list-${colId} .slot-item`);
+                items.forEach(item => item.classList.remove('jackpot-center-only'));
+                const centerItem = document.getElementById(`item-${colId}-${absIdx}`);
+                if (centerItem) {
+                    items.forEach(item => {
+                        if (item !== centerItem) {
+                            item.classList.add('jackpot-center-only');
+                        }
+                    });
                 }
-            } catch (e) {}
+            });
+        }
+
+        function flashPanels(effectClass) {
+            const panels = document.querySelectorAll('.panel-container');
+            panels.forEach(panel => {
+                panel.classList.remove('win-gold', 'win-rainbow', 'win-white');
+                panel.classList.add(effectClass);
+            });
+            setTimeout(() => {
+                panels.forEach(panel => panel.classList.add('win-white'));
+            }, 90);
+            setTimeout(() => {
+                panels.forEach(panel => {
+                    panel.classList.remove('win-gold', 'win-rainbow', 'win-white');
+                });
+            }, 900);
         }
 
         function resetVisualEffects() {
-            // ルビとエフェクトのクリア
             document.querySelectorAll('.slot-item').forEach(el => {
-                el.classList.remove('ruby-visible');
+                el.classList.remove('ruby-visible', 'jackpot-center-only');
                 const tc = el.querySelector('.word-container');
-                if(tc) {
+                if (tc) {
                     tc.classList.remove('effect-gold', 'effect-rainbow');
                 }
             });
+
+            document.querySelectorAll('.panel-container').forEach(panel => {
+                panel.classList.remove('win-gold', 'win-rainbow', 'win-white');
+            });
+
+            ['e', 'd', 'p'].forEach(colId => {
+                const btn = document.getElementById(`btn-stop-${colId}`);
+                if (btn) {
+                    btn.classList.remove('button-win-gold', 'button-win-yellow', 'button-near-miss');
+                }
+            });
+            document.querySelectorAll('.word-container.near-miss-wobble').forEach(el => {
+                el.classList.remove('near-miss-wobble');
+            });
+            restoreOriginalLetters();
+
+            // 当たり状態・アイコン・キラキラをリセット
+            state.isWin = false;
+            const iconImg = document.getElementById('icon-img');
+            if (iconImg) iconImg.classList.remove('win-color');
+            stopSparkle();
+
+            const wrapper = document.getElementById('app-wrapper');
+            if (wrapper) wrapper.classList.remove('screen-shake');
         }
 
         // -----------------------------------------------------------------
@@ -978,14 +1560,14 @@
 
         function startConfetti() {
             stopConfetti();
-            for (let i = 0; i < 150; i++) {
+            for (let i = 0; i < 300; i++) {
                 confettiParticles.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height - canvas.height,
                     w: Math.random() * 10 + 5,
                     h: Math.random() * 10 + 5,
                     color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                    vy: Math.random() * 3 + 2,
+                    vy: Math.random() * 3.9 + 2.6,
                     vx: Math.random() * 2 - 1,
                     rot: Math.random() * 360,
                     rotSpeed: Math.random() * 10 - 5
@@ -1005,12 +1587,12 @@
         function renderConfetti() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             let active = false;
-            
+
             confettiParticles.forEach(p => {
                 p.y += p.vy;
                 p.x += p.vx;
                 p.rot += p.rotSpeed;
-                
+
                 if (p.y < canvas.height) active = true;
 
                 ctx.save();
@@ -1028,9 +1610,148 @@
             }
         }
 
+        // -----------------------------------------------------------------
+        // 8. 白フラッシュ演出
+        // -----------------------------------------------------------------
+        function triggerWinFlash() {
+            const overlay = document.getElementById('win-flash-overlay');
+            if (!overlay) return;
+            overlay.classList.remove('win-flash-active');
+            void overlay.offsetWidth; // reflowでアニメーションを再起動
+            overlay.classList.add('win-flash-active');
+        }
+
+        // -----------------------------------------------------------------
+        // 9. キラキラエンジン (Canvas)
+        // -----------------------------------------------------------------
+        const sparkleCanvas = document.getElementById('sparkle-canvas');
+        const sparkleCtx = sparkleCanvas ? sparkleCanvas.getContext('2d') : null;
+        let sparkleParticles = [];
+        let sparkleAnimId = null;
+
+        function resizeSparkleCanvas() {
+            if (!sparkleCanvas) return;
+            sparkleCanvas.width = window.innerWidth;
+            sparkleCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeSparkleCanvas);
+        resizeSparkleCanvas();
+
+        function startSparkle() {
+            stopSparkle();
+            if (!sparkleCtx) return;
+            for (let i = 0; i < 300; i++) {
+                sparkleParticles.push(createSparkleParticle());
+            }
+            renderSparkle();
+        }
+
+        function createSparkleParticle() {
+            return {
+                x: Math.random() * sparkleCanvas.width,
+                y: Math.random() * sparkleCanvas.height,
+                size: Math.random() * 12 + 5,
+                color: `hsl(${Math.random() * 60 + 30}, 100%, ${Math.random() * 25 + 70}%)`,
+                vx: (Math.random() - 0.5) * 1.2,
+                vy: (Math.random() - 0.5) * 1.2,
+                alpha: Math.random(),
+                alphaSpeed: Math.random() * 0.035 + 0.01,
+                alphaDir: 1,
+                rot: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.08
+            };
+        }
+
+        function stopSparkle() {
+            sparkleParticles = [];
+            if (sparkleAnimId) {
+                cancelAnimationFrame(sparkleAnimId);
+                sparkleAnimId = null;
+            }
+            if (sparkleCtx && sparkleCanvas) {
+                sparkleCtx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+            }
+        }
+
+        function renderSparkle() {
+            if (!sparkleCtx || sparkleParticles.length === 0) return;
+            sparkleCtx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+
+            // スロットマシンの領域を描画から除外する (evenodd クリッピング)
+            const slotEl = document.getElementById('slot-machine');
+            const slotRect = slotEl ? slotEl.getBoundingClientRect() : null;
+
+            sparkleCtx.save();
+            if (slotRect) {
+                sparkleCtx.beginPath();
+                // 全画面の領域
+                sparkleCtx.rect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+                // スロットマシンの領域（除外する穴） – 少し拡大してパーティクルが少しはみ出るのも防ぐ
+                const pad = 12;
+                sparkleCtx.rect(
+                    slotRect.left - pad,
+                    slotRect.top - pad,
+                    slotRect.width + pad * 2,
+                    slotRect.height + pad * 2
+                );
+                sparkleCtx.clip('evenodd');
+            }
+
+            sparkleParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rot += p.rotSpeed;
+                p.alpha += p.alphaSpeed * p.alphaDir;
+
+                // 画面端でループ
+                if (p.x < 0) p.x = sparkleCanvas.width;
+                if (p.x > sparkleCanvas.width) p.x = 0;
+                if (p.y < 0) p.y = sparkleCanvas.height;
+                if (p.y > sparkleCanvas.height) p.y = 0;
+
+                // アルファのバウンス
+                if (p.alpha >= 1) { p.alpha = 1; p.alphaDir = -1; }
+                if (p.alpha <= 0.05) { p.alpha = 0.05; p.alphaDir = 1; }
+
+                // 描画: スター/ダイヤ形
+                sparkleCtx.save();
+                sparkleCtx.globalAlpha = p.alpha;
+                sparkleCtx.translate(p.x, p.y);
+                sparkleCtx.rotate(p.rot);
+                sparkleCtx.fillStyle = p.color;
+                sparkleCtx.shadowColor = p.color;
+                sparkleCtx.shadowBlur = p.size * 5;
+                sparkleCtx.beginPath();
+                sparkleCtx.moveTo(0, -p.size);
+                sparkleCtx.lineTo(p.size * 0.35, 0);
+                sparkleCtx.lineTo(0, p.size);
+                sparkleCtx.lineTo(-p.size * 0.35, 0);
+                sparkleCtx.closePath();
+                sparkleCtx.fill();
+                sparkleCtx.restore();
+            });
+
+            sparkleCtx.restore(); // clipを解除
+
+            if (sparkleParticles.length > 0) {
+                sparkleAnimId = requestAnimationFrame(renderSparkle);
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // 10. アイコンボタンのクリックハンドラ
+        // -----------------------------------------------------------------
+        function handleIconClick() {
+            const url = state.isWin
+                ? 'https://edp.mods.jp/Aprilfool/2025/April-top.html'
+                : 'https://edp.mods.jp/';
+            window.open(url, '_blank');
+        }
+
         // 初期化実行
         initDOM();
 
     </script>
 </body>
+
 </html>
